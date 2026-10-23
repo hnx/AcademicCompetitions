@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Academic Competitions</title>
+<style>
+  :root {
+    --white: #ffffff;
+    --black: #000000;
+    --line: rgba(255, 255, 255, 0.25);
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    display: flex;
+    flex-direction: column;
+    background: var(--white);
+    color: var(--black);
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-weight: 300;
+    letter-spacing: 0.01em;
+  }
+
+  header {
+    padding: 56px 24px 40px;
+    text-align: center;
+  }
+  h1 {
+    margin: 0;
+    font-size: clamp(1.6rem, 5vw, 2.4rem);
+    font-weight: 200;
+    letter-spacing: 0.04em;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 8px;
+  }
+
+  main { flex: 1; }
+
+  /* Full-width, always-open bands (edge to edge) */
+  .band {
+    width: 100%;
+    background: var(--black);
+    color: var(--white);
+    border-top: 1px solid var(--black);
+    border-bottom: 1px solid var(--black);
+    margin-bottom: 24px;
+    padding: 18px 24px;
+  }
+  .band-inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 14px 32px;
+  }
+  .band-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 300;
+    letter-spacing: 0.04em;
+  }
+  .band-title.underlined {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 6px;
+  }
+  .band-buttons { display: flex; flex-wrap: wrap; gap: 12px; }
+  .band-buttons button {
+    background: var(--black);
+    color: var(--white);
+    border: 1px solid var(--white);
+    font: inherit;
+    font-size: 0.9rem;
+    font-weight: 300;
+    padding: 8px 18px;
+    cursor: pointer;
+  }
+  .band-buttons button:hover,
+  .band-buttons button:focus-visible {
+    background: var(--white);
+    color: var(--black);
+    outline: none;
+  }
+  .band-inner.stacked { flex-direction: column; align-items: flex-start; }
+  .band-buttons button[aria-expanded="true"] {
+    background: var(--white);
+    color: var(--black);
+  }
+  .country-panel { margin-top: 18px; }
+  .country-panel[hidden] { display: none; }
+  .country-heading { margin: 0 0 12px; font-size: 0.9rem; font-weight: 300; opacity: 0.7; }
+  .country-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    max-height: 340px;
+    overflow-y: auto;
+    padding-bottom: 6px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--white) var(--black);
+  }
+  .country-grid button {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    background: var(--black);
+    color: var(--white);
+    border: 1px solid var(--white);
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 300;
+    line-height: 1.2;
+    padding: 7px 26px;
+    cursor: pointer;
+  }
+  .country-grid button:hover,
+  .country-grid button:focus-visible {
+    background: var(--white);
+    color: var(--black);
+    outline: none;
+  }
+  .board-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 32px;
+    width: 100%;
+  }
+  .board-search {
+    flex: 1 1 220px;
+    max-width: 360px;
+    background: var(--black);
+    color: var(--white);
+    border: 1px solid var(--white);
+    font: inherit;
+    font-size: 0.9rem;
+    font-weight: 300;
+    padding: 7px 14px;
+    border-radius: 0;
+  }
+  .board-search::placeholder { color: rgba(255, 255, 255, 0.55); }
+  .board-search:focus-visible { outline: 1px solid var(--white); outline-offset: 3px; }
+  .event-search { display: block; width: 100%; max-width: 360px; margin: 0 0 12px; }
+  .event-back { display: none; margin: 0 0 12px; background: var(--black); color: var(--white); border: 1px solid var(--white); font: inherit; font-size: 0.85rem; font-weight: 300; padding: 7px 18px; cursor: pointer; }
+  .event-back.show { display: inline-block; }
+  .event-back:hover, .event-back:focus-visible { background: var(--white); color: var(--black); outline: none; }
+  .event-empty { margin: 0 0 8px; font-size: 0.9rem; opacity: 0.7; }
+  .event-empty[hidden], .country-grid button[hidden] { display: none; }
+  .board-empty { margin: 0; font-size: 0.9rem; opacity: 0.7; }
+  .board-empty[hidden] { display: none; }
+  .board-scroller {
+    --gap: 12px;
+    display: flex;
+    gap: var(--gap);
+    width: 100%;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    padding-bottom: 10px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .board-scroller::-webkit-scrollbar { display: none; }
+  .board-scroller button {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    scroll-snap-align: start;
+    background: var(--black);
+    color: var(--white);
+    border: 1px solid var(--white);
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 300;
+    line-height: 1.2;
+    padding: 7px 26px;
+    cursor: pointer;
+  }
+  .board-scroller button:hover,
+  .board-scroller button:focus-visible {
+    background: var(--white);
+    color: var(--black);
+    outline: none;
+  }
+
+  .footer-text { margin-bottom: 32px; }
+  .footer-text p { margin: 0; font-size: 0.75rem; font-weight: 300; line-height: 1.6; }
+  .footer-text .tagline { margin-bottom: 4px; }
+  .footer-text a {
+    color: var(--white);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 4px;
+  }
+  .footer-text a:hover, .footer-text a:focus-visible { text-decoration-thickness: 2px; outline: none; }
+
+  footer {
+    background: var(--black);
+    color: var(--white);
+    padding: 40px 24px 32px;
+  }
+  .footer-inner { max-width: 760px; margin: 0 auto; }
+
+  nav ul {
+    list-style: none;
+    margin: 0 0 32px;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 32px;
+  }
+  nav a {
+    color: var(--white);
+    text-decoration: none;
+    font-size: 0.95rem;
+    font-weight: 300;
+    border-bottom: 1px solid transparent;
+  }
+  nav a:hover, nav a:focus-visible { border-bottom-color: var(--white); outline: none; }
+
+  .accordion { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .accordion-trigger {
+    width: 100%;
+    background: none;
+    border: 0;
+    color: var(--white);
+    font: inherit;
+    font-size: 1rem;
+    font-weight: 300;
+    text-align: left;
+    padding: 16px 0;
+    cursor: pointer;
+  }
+  .accordion-trigger:focus-visible { outline: 1px solid var(--white); outline-offset: 4px; }
+
+  .accordion-panel {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.25s ease;
+  }
+  .accordion-panel.open { grid-template-rows: 1fr; }
+  .accordion-panel > div { overflow: hidden; min-height: 0; }
+
+  .panel-content { padding: 4px 0 0; }
+  .panel-content h2 {
+    margin: 0 0 12px;
+    font-size: 0.95rem;
+    font-weight: 300;
+    opacity: 0.7;
+  }
+  .platform {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: baseline;
+    padding: 12px 0;
+    border-top: 1px solid var(--line);
+    font-size: 0.95rem;
+  }
+  .platform a {
+    color: var(--white);
+    text-decoration: none;
+  }
+  .platform a:hover, .platform a:focus-visible { text-decoration: underline; outline: none; }
+
+  .panel-content h2.subsection { margin-top: 24px; }
+  .blank-email { min-width: 160px; min-height: 1.2em; }
+
+  .copyright { margin: 28px 0 0; font-size: 0.8rem; opacity: 0.6; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .accordion-panel { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Academic Competitions</h1>
+</header>
+
+<main>
+  <section class="band" aria-labelledby="events-title">
+    <div class="band-inner">
+      <h2 id="events-title" class="band-title">Academic Events</h2>
+      <div class="band-buttons">
+        <button type="button" class="event-trigger" data-key="international" aria-expanded="false" aria-controls="country-panel">International Events</button>
+        <button type="button" class="event-trigger" data-key="national" aria-expanded="false" aria-controls="country-panel">National Events</button>
+        <button type="button" class="event-trigger" data-key="institutional" aria-expanded="false" aria-controls="country-panel">Institutional Events</button>
+        <button type="button" class="event-trigger" data-key="unclassified" aria-expanded="false" aria-controls="country-panel">Unclassified Academic Events</button>
+      </div>
+    </div>
+    <div class="country-panel" id="country-panel" hidden>
+      <button type="button" class="event-back" id="event-back">← All countries</button>
+      <input type="search" id="event-search" class="board-search event-search" placeholder="Search events" aria-label="Search events" autocomplete="off">
+      <p class="event-empty" id="event-empty" hidden>No matching events.</p>
+      <div class="country-grid" id="country-grid" role="group"></div>
+    </div>
+  </section>
+
+  <section class="band" aria-labelledby="boards-title">
+    <div class="band-inner stacked">
+      <div class="board-head">
+        <h2 id="boards-title" class="band-title underlined">Education Boards</h2>
+        <input type="search" id="board-search" class="board-search" placeholder="Search education boards" aria-label="Search education boards" autocomplete="off">
+      </div>
+      <p class="board-empty" id="board-empty" hidden>No education boards found.</p>
+      <div class="board-scroller" id="board-scroller" role="group" aria-label="Education Boards">
+        <button type="button">International Baccalaureate</button>
+        <button type="button">Cambridge University Press &amp; Assessment</button>
+        <button type="button">The College Board</button>
+        <button type="button">Pearson Edexcel</button>
+        <button type="button">Assessment and Qualifications Alliance</button>
+        <button type="button">Oxford, Cambridge and Royal Society of Arts Examinations</button>
+        <button type="button">Welsh Joint Education Committee</button>
+        <button type="button">Scottish Qualifications Authority</button>
+        <button type="button">Council for the Curriculum, Examinations and Assessment</button>
+        <button type="button">Central Board of Secondary Education</button>
+        <button type="button">Council for the Indian School Certificate Examinations</button>
+        <button type="button">National Institute of Open Schooling</button>
+        <button type="button">Federal Board of Intermediate and Secondary Education</button>
+        <button type="button">Hong Kong Examinations and Assessment Authority</button>
+        <button type="button">West African Examinations Council</button>
+        <button type="button">Kenya National Examinations Council</button>
+        <button type="button">New South Wales Education Standards Authority</button>
+        <button type="button">Victorian Curriculum and Assessment Authority</button>
+        <button type="button">Ministère de l’Éducation nationale (Baccalauréat)</button>
+        <button type="button">Kultusministerkonferenz (Abitur)</button>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <nav aria-label="Footer">
+      <ul>
+        <li><a href="#about">About</a></li>
+        <li><a href="#updates">Updates</a></li>
+        <li><a href="#forums">Forums</a></li>
+        <li><a href="#account">Account</a></li>
+      </ul>
+    </nav>
+
+    <div class="footer-text">
+      <p class="tagline">@AcademicCompetitions &mdash; A Centralized Community Hub.</p>
+      <p>A Community Under The Department Of <a href="https://hnx.github.io/PEFFUS/#dept-communities" target="_blank" rel="noopener">PEFFUS Communities</a></p>
+    </div>
+
+    <div class="accordion">
+      <button class="accordion-trigger" id="connect-trigger" aria-expanded="false" aria-controls="connect-panel">Connect With Us</button>
+      <div class="accordion-panel" id="connect-panel" role="region" aria-labelledby="connect-trigger">
+        <div>
+          <div class="panel-content">
+            <h2>Digital Media Platforms</h2>
+            <div class="platform">
+              <a href="https://www.youtube.com/@AcademicCompetitions" target="_blank" rel="noopener">YouTube</a>
+              <a href="https://www.youtube.com/@AcademicCompetitions" target="_blank" rel="noopener">@AcademicCompetitions</a>
+            </div>
+            <div class="platform">
+              <a href="https://www.instagram.com/academiccompetitions/" target="_blank" rel="noopener">Instagram</a>
+              <a href="https://www.instagram.com/academiccompetitions/" target="_blank" rel="noopener">@AcademicCompetitions</a>
+            </div>
+
+            <h2 class="subsection">Contact Us</h2>
+            <div class="platform">
+              <span>For General Inquiries</span>
+              <!-- Add email address below -->
+              <span class="blank-email"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p class="copyright">&copy; 2026 Academic Competitions. All rights reserved.</p>
+  </div>
+</footer>
+
+<script>
+  const trigger = document.getElementById('connect-trigger');
+  const panel = document.getElementById('connect-panel');
+  trigger.addEventListener('click', () => {
+    const open = panel.classList.toggle('open');
+    trigger.setAttribute('aria-expanded', open);
+  });
+
+  const countries = [
+    "Afghanistan","Albania","Algeria","Andorra","Angola","Antigua and Barbuda","Argentina","Armenia","Australia","Austria",
+    "Azerbaijan","Bahamas","Bahrain","Bangladesh","Barbados","Belarus","Belgium","Belize","Benin","Bhutan","Bolivia",
+    "Bosnia and Herzegovina","Botswana","Brazil","Brunei","Bulgaria","Burkina Faso","Burundi","Cabo Verde","Cambodia",
+    "Cameroon","Canada","Central African Republic","Chad","Chile","China","Colombia","Comoros","Costa Rica","Côte d’Ivoire",
+    "Croatia","Cuba","Cyprus","Czechia","Democratic Republic of the Congo","Denmark","Djibouti","Dominica","Dominican Republic",
+    "Ecuador","Egypt","El Salvador","Equatorial Guinea","Eritrea","Estonia","Eswatini","Ethiopia","Fiji","Finland","France",
+    "Gabon","Gambia","Georgia","Germany","Ghana","Greece","Grenada","Guatemala","Guinea","Guinea-Bissau","Guyana","Haiti",
+    "Honduras","Hungary","Iceland","India","Indonesia","Iran","Iraq","Ireland","Israel","Italy","Jamaica","Japan","Jordan",
+    "Kazakhstan","Kenya","Kiribati","Kuwait","Kyrgyzstan","Laos","Latvia","Lebanon","Lesotho","Liberia","Libya","Liechtenstein",
+    "Lithuania","Luxembourg","Madagascar","Malawi","Malaysia","Maldives","Mali","Malta","Marshall Islands","Mauritania",
+    "Mauritius","Mexico","Micronesia","Moldova","Monaco","Mongolia","Montenegro","Morocco","Mozambique","Myanmar","Namibia",
+    "Nauru","Nepal","Netherlands","New Zealand","Nicaragua","Niger","Nigeria","North Korea","North Macedonia","Norway","Oman",
+    "Pakistan","Palau","Palestine","Panama","Papua New Guinea","Paraguay","Peru","Philippines","Poland","Portugal","Qatar",
+    "Republic of the Congo","Romania","Russia","Rwanda","Saint Kitts and Nevis","Saint Lucia","Saint Vincent and the Grenadines",
+    "Samoa","San Marino","São Tomé and Príncipe","Saudi Arabia","Senegal","Serbia","Seychelles","Sierra Leone","Singapore",
+    "Slovakia","Slovenia","Solomon Islands","Somalia","South Africa","South Korea","South Sudan","Spain","Sri Lanka","Sudan",
+    "Suriname","Sweden","Switzerland","Syria","Taiwan","Tajikistan","Tanzania","Thailand","Timor-Leste","Togo","Tonga",
+    "Trinidad and Tobago","Tunisia","Türkiye","Turkmenistan","Tuvalu","Uganda","Ukraine","United Arab Emirates",
+    "United Kingdom","United States","Uruguay","Uzbekistan","Vanuatu","Vatican City","Venezuela","Vietnam","Yemen","Zambia","Zimbabwe"
+  ];
+  const international = [
+    "International Mathematical Olympiad (IMO)","International Olympiad in Informatics (IOI)",
+    "International Physics Olympiad (IPhO)","International Chemistry Olympiad (IChO)",
+    "International Biology Olympiad (IBO)","International Olympiad on Astronomy and Astrophysics (IOAA)",
+    "International Astronomy Olympiad (IAO)","International Geography Olympiad (iGeo)",
+    "International Earth Science Olympiad (IESO)","International Junior Science Olympiad (IJSO)",
+    "International Linguistics Olympiad (IOL)","International Economics Olympiad (IEO)",
+    "International Philosophy Olympiad (IPO)","International Olympiad in Artificial Intelligence (IOAI)",
+    "International Mendeleev Chemistry Olympiad","International Zhautykov Olympiad",
+    "International Olympiad of Metropolises","International Tournament of Young Physicists (IYPT)",
+    "European Girls’ Mathematical Olympiad (EGMO)","European Girls’ Olympiad in Informatics (EGOI)",
+    "European Physics Olympiad (EuPhO)","Asia-Pacific Mathematics Olympiad (APMO)",
+    "Asia-Pacific Informatics Olympiad (APIO)","Balkan Mathematical Olympiad",
+    "Junior Balkan Mathematical Olympiad","Iberoamerican Mathematical Olympiad",
+    "Pan-African Mathematics Olympiad","Romanian Master of Mathematics","Baltic Way",
+    "Central European Olympiad in Informatics (CEOI)","Baltic Olympiad in Informatics (BOI)",
+    "International Mathematics Competition for University Students (IMC)",
+    "William Lowell Putnam Mathematical Competition","Simon Marais Mathematics Competition"
+  ];
+  const institutional = [
+    "HMMT (Harvard-MIT Mathematics Tournament)","Stanford Math Tournament (SMT)",
+    "Princeton University Mathematics Competition (PUMaC)","Yale MMATHS","Girls in Math at Yale",
+    "Brown University Math Olympiad (BrUMO)","Columbia Math Tournament","Berkeley Math Tournament (BMT)",
+    "Carnegie Mellon Informatics and Mathematics Competition (CMIMC)",
+    "Caltech Harvey Mudd Math Competition (CHMMC)","Duke Math Meet (DMM)",
+    "Pomona College Mathematical Talent Search"
+  ];
+  const countryEvents = {
+    "India": [
+      "Indian Olympiad Qualifier in Mathematics (IOQM)","Pre-Regional Mathematical Olympiad (PRMO)",
+      "Regional Mathematical Olympiad (RMO)","Indian National Mathematical Olympiad (INMO)",
+      "Zonal Computing Olympiad (ZCO)","Zonal Informatics Olympiad (ZIO)","Indian National Olympiad in Informatics (INOI)",
+      "National Standard Examination in Chemistry (NSEC)","Indian National Chemistry Olympiad (INChO)",
+      "National Standard Examination in Physics (NSEP)","Indian National Physics Olympiad (INPhO)",
+      "National Standard Examination in Biology (NSEB)","Indian National Biology Olympiad (INBO)",
+      "National Standard Examination in Astronomy (NSEA)","Indian National Astronomy Olympiad (INAO)",
+      "National Standard Examination in Junior Science (NSEJS)",
+      "JEE Main","JEE Advanced","WBJEE (JEE West Bengal)","NEET UG","NEET PG"
+    ],
+    "United States": [
+      "MATHCOUNTS (Chapter, State, National)","AMC 8","AMC 10","AMC 12",
+      "American Invitational Mathematics Examination (AIME)","USA Junior Mathematical Olympiad (USAJMO)",
+      "USA Mathematical Olympiad (USAMO)","USA Mathematical Talent Search (USAMTS)",
+      "American Regions Mathematics League (ARML)","Math Prize for Girls",
+      "USA Computing Olympiad (USACO) – Bronze, Silver, Gold, Platinum",
+      "American Computer Science League (ACSL)","Congressional App Challenge",
+      "F=ma Exam","AAPT Physics Bowl","USA Physics Olympiad (USAPhO)",
+      "USNCO Local Section Exam","USA National Chemistry Olympiad (USNCO) National Exam",
+      "USA Biology Olympiad (USABO) Open Exam","USA Biology Olympiad (USABO) Semifinal Exam",
+      "USA Astronomy and Astrophysics Olympiad (USAAAO)",
+      "North American Computational Linguistics Open (NACLO)","USA Brain Bee",
+      "Science Olympiad (Regional, State, National)","National Science Bowl",
+      "Regeneron Science Talent Search","Regeneron International Science and Engineering Fair (ISEF)",
+      "Junior Science and Humanities Symposium (JSHS)","National Envirothon",
+      "FIRST Robotics Competition","VEX Robotics Competition",
+      "National Geographic Bee","Scripps National Spelling Bee","National Economics Challenge",
+      "National History Day","United States Academic Decathlon","NAQT Quiz Bowl Nationals",
+      "National Speech & Debate Tournament","Future Problem Solving Program International (FPSPI)",
+      "PSAT/NMSQT","SAT","ACT","AP Exams","MCAT","LSAT","GRE"
+    ],
+    "South Korea": [
+      "Korean Mathematical Olympiad (KMO)","Korean Olympiad in Informatics (KOI)",
+      "Korean Physics Olympiad (KPhO)","Korean Chemistry Olympiad (KChO)","Korean Biology Olympiad (KBO)",
+      "College Scholastic Ability Test (CSAT / Suneung)"
+    ],
+    "North Korea": [],
+    "Taiwan": [
+      "Taiwan Mathematical Olympiad (TWMO)","Taiwan Olympiad in Informatics (TOI)",
+      "Taiwan Physics Olympiad","Taiwan Chemistry Olympiad","Taiwan Biology Olympiad",
+      "Comprehensive Assessment Program for Junior High School Students (CAP)",
+      "General Scholastic Ability Test (GSAT)","Advanced Subjects Test (AST)"
+    ],
+    "Singapore": [
+      "Singapore Mathematical Olympiad for Primary Schools (SMOPS)",
+      "Singapore Mathematical Olympiad (SMO) – Junior, Senior, Open","National Olympiad in Informatics (NOI Singapore)",
+      "Singapore Physics Olympiad (SPhO)","Singapore Chemistry Olympiad (SChO)","Singapore Biology Olympiad (SBO)",
+      "PSLE","GCE O-Level","GCE N-Level","GCE A-Level"
+    ],
+    "Finland": [
+      "Finnish Mathematical Olympiad","Finnish Olympiad in Informatics","Finnish Physics Olympiad",
+      "Finnish Chemistry Olympiad","Finnish Biology Olympiad","Matriculation Examination (Ylioppilastutkinto)"
+    ],
+    "Estonia": [
+      "Estonian Mathematical Olympiad","Estonian Olympiad in Informatics","Estonian Physics Olympiad",
+      "Estonian Chemistry Olympiad","Estonian Biology Olympiad","Estonian State Exams (Riigieksamid)"
+    ],
+    "China": [
+      "National High School Mathematics League (Preliminary)","Chinese Mathematical Olympiad (CMO)",
+      "CCF CSP-J/S (Certified Software Professional)","National Olympiad in Informatics Provincial Selection (NOIP)",
+      "National Olympiad in Informatics (NOI)",
+      "Chinese Physics Olympiad (CPhO) Preliminary","Chinese Physics Olympiad (CPhO) Final",
+      "Chinese Chemistry Olympiad (CChO) Preliminary","Chinese Chemistry Olympiad (CChO) Final",
+      "Chinese Biology Olympiad (CBO) Preliminary","Chinese Biology Olympiad (CBO) Final",
+      "Zhongkao","Gaokao"
+    ]
+  };
+  const unclassified = [];
+  const lists = { international, national: countries, institutional, unclassified };
+
+  const countryGrid = document.getElementById('country-grid');
+  const countryPanel = document.getElementById('country-panel');
+  const eventSearch = document.getElementById('event-search');
+  const eventEmpty = document.getElementById('event-empty');
+  const eventBack = document.getElementById('event-back');
+  const eventTriggers = Array.from(document.querySelectorAll('.event-trigger'));
+  let currentKey = null;
+
+  function filterEvents() {
+    const q = eventSearch.value.trim().toLowerCase();
+    let shown = 0;
+    Array.from(countryGrid.children).forEach(b => {
+      const match = b.textContent.toLowerCase().includes(q);
+      b.hidden = !match;
+      if (match) shown++;
+    });
+    eventEmpty.hidden = shown > 0;
+    countryGrid.scrollLeft = 0;
+    countryGrid.scrollTop = 0;
+  }
+  eventSearch.addEventListener('input', filterEvents);
+
+  function render(items, label, onPick) {
+    countryGrid.replaceChildren();
+    items.forEach(name => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = name;
+      if (onPick) b.addEventListener('click', () => onPick(name));
+      countryGrid.appendChild(b);
+    });
+    countryGrid.setAttribute('aria-label', label);
+    eventSearch.value = '';
+    eventSearch.placeholder = 'Search ' + label.toLowerCase();
+    eventSearch.setAttribute('aria-label', eventSearch.placeholder);
+    eventEmpty.textContent = items.length ? 'No matching events.' : 'No events listed yet.';
+    eventEmpty.hidden = items.length > 0;
+    countryGrid.scrollTop = 0;
+  }
+
+  function showList(key, label) {
+    currentKey = key;
+    eventBack.classList.remove('show');
+    const onPick = key === 'national'
+      ? name => {
+          if (!countryEvents[name]) return;
+          render(countryEvents[name], name + ' events');
+          eventBack.classList.add('show');
+        }
+      : null;
+    render(lists[key], label, onPick);
+  }
+  eventBack.addEventListener('click', () => showList('national', 'National events'));
+
+  eventTriggers.forEach(t => {
+    t.addEventListener('click', () => {
+      const wasOpen = t.getAttribute('aria-expanded') === 'true';
+      eventTriggers.forEach(o => o.setAttribute('aria-expanded', 'false'));
+      if (wasOpen) { countryPanel.hidden = true; return; }
+      showList(t.dataset.key, t.textContent);
+      countryPanel.hidden = false;
+      t.setAttribute('aria-expanded', 'true');
+    });
+  });
+
+  const search = document.getElementById('board-search');
+  const scroller = document.getElementById('board-scroller');
+  const empty = document.getElementById('board-empty');
+  const boardButtons = Array.from(scroller.querySelectorAll('button'));
+  search.addEventListener('input', () => {
+    const q = search.value.trim().toLowerCase();
+    let shown = 0;
+    boardButtons.forEach(b => {
+      const match = b.textContent.toLowerCase().includes(q);
+      b.hidden = !match;
+      if (match) shown++;
+    });
+    empty.hidden = shown > 0;
+    scroller.scrollLeft = 0;
+  });
+</script>
+
+</body>
+</html>
